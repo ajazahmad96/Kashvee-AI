@@ -1,0 +1,7 @@
+{
+  "name": "kashvee",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Kashvee: vanilla JS chat app with a streaming Groq backend on Vercel.",
+  "engines": { "node": ">=20" }
+}

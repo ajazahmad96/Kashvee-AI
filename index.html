@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="color-scheme" content="dark light">
+  <meta name="theme-color" content="#0A0A0C">
+  <meta name="description" content="Kashvee, your AI companion, always ready to talk.">
+  <title>Kashvee</title>
+  <link rel="icon" href="assets/avatar.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="style.css">
+  <script>
+    /* Apply the saved theme before first paint to avoid a flash. */
+    (function () {
+      try {
+        var s = JSON.parse(localStorage.getItem('kashvee:v1:settings'));
+        var t = s && s.theme;
+        if (t === 'system') t = window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
+        if (t === 'light' || t === 'dark') {
+          document.documentElement.setAttribute('data-theme', t);
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', t === 'light' ? '#F5F5F9' : '#0A0A0C');
+        }
+      } catch (e) { /* storage unavailable: keep the default */ }
+    })();
+  </script>
+</head>
+<body>
+  <noscript>Kashvee needs JavaScript turned on to run.</noscript>
+
+  <!-- Icon sprite -->
+  <svg xmlns="http://www.w3.org/2000/svg" width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+    <defs>
+      <symbol id="i-chat" viewBox="0 0 24 24"><path d="M4 6.5A2.5 2.5 0 0 1 6.5 4h11A2.5 2.5 0 0 1 20 6.5v7a2.5 2.5 0 0 1-2.5 2.5H11l-4.5 3.5V16A2.5 2.5 0 0 1 4 13.5z"/></symbol>
+      <symbol id="i-memory" viewBox="0 0 24 24"><path d="M7 4h10a1 1 0 0 1 1 1v15l-6-4-6 4V5a1 1 0 0 1 1-1z"/></symbol>
+      <symbol id="i-bookmark" viewBox="0 0 24 24"><path d="M7 4h10a1 1 0 0 1 1 1v15l-6-4-6 4V5a1 1 0 0 1 1-1z"/></symbol>
+      <symbol id="i-profile" viewBox="0 0 24 24"><circle cx="12" cy="8.5" r="3.5"/><path d="M5 20c.8-3.6 3.6-5.5 7-5.5s6.2 1.9 7 5.5"/></symbol>
+      <symbol id="i-settings" viewBox="0 0 24 24"><path d="M4 7h9M19 7h1M4 17h1M11 17h9"/><circle cx="16" cy="7" r="2.2"/><circle cx="8" cy="17" r="2.2"/></symbol>
+      <symbol id="i-send" viewBox="0 0 24 24"><path d="M12 19V6M6.5 11.5 12 6l5.5 5.5"/></symbol>
+      <symbol id="i-mic" viewBox="0 0 24 24"><rect x="9" y="3.5" width="6" height="11" rx="3"/><path d="M5.5 11.5a6.5 6.5 0 0 0 13 0M12 18v2.5"/></symbol>
+      <symbol id="i-clip" viewBox="0 0 24 24"><path d="m19.5 11.5-7 7a4.5 4.5 0 0 1-6.4-6.4l7.4-7.4a3 3 0 0 1 4.2 4.2l-7.4 7.4a1.5 1.5 0 0 1-2.1-2.1l6.7-6.7"/></symbol>
+      <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+      <symbol id="i-trash" viewBox="0 0 24 24"><path d="M5 7h14M10 7V5h4v2M7 7l.8 12h8.4L17 7M10.5 11v5M13.5 11v5"/></symbol>
+      <symbol id="i-down" viewBox="0 0 24 24"><path d="M12 5v13M6.5 12.5 12 18l5.5-5.5"/></symbol>
+    </defs>
+  </svg>
+
+  <div class="app" id="app">
+    <main class="stage" id="stage">
+
+      <!-- ===================== CHAT ===================== -->
+      <section class="view view-chat" id="view-chat" data-view="chat" aria-labelledby="chat-title">
+        <header class="topbar">
+          <div class="who">
+            <span class="avatar avatar--sm" data-initial="K">
+              <img src="assets/avatar.svg" alt="" width="40" height="40">
+              <span class="status-dot" id="status-dot"></span>
+            </span>
+            <div class="who-text">
+              <h1 class="wordmark" id="chat-title">Kashvee</h1>
+              <p class="status" id="chat-status">Online</p>
+            </div>
+          </div>
+          <button type="button" class="icon-btn" id="new-chat-btn" aria-label="Start a new conversation">
+            <svg class="icon" aria-hidden="true"><use href="#i-plus"/></svg>
+          </button>
+        </header>
+
+        <div class="messages-wrap">
+          <div class="messages" id="messages" role="log" aria-live="polite" aria-relevant="additions" aria-label="Conversation" tabindex="0">
+            <div class="welcome" id="welcome">
+              <span class="avatar avatar--xl" data-initial="K">
+                <img src="assets/avatar.svg" alt="" width="88" height="88">
+              </span>
+              <h2 class="welcome-title">Kashvee</h2>
+              <p class="welcome-sub">Your AI companion, always ready to talk.</p>
+              <div class="chips" id="suggestions"></div>
+            </div>
+            <div class="thread" id="thread"></div>
+            <div class="typing" id="typing" hidden aria-hidden="true">
+              <span class="typing-bubble"><i></i><i></i><i></i></span>
+            </div>
+          </div>
+          <button type="button" class="jump-btn" id="jump-btn" hidden aria-label="Jump to latest message">
+            <svg class="icon" aria-hidden="true"><use href="#i-down"/></svg>
+          </button>
+        </div>
+
+        <form class="composer" id="composer" autocomplete="off">
+          <button type="button" class="icon-btn" id="attach-btn" aria-label="Attach a file">
+            <svg class="icon" aria-hidden="true"><use href="#i-clip"/></svg>
+          </button>
+          <div class="field">
+            <label class="sr-only" for="message-input">Message Kashvee</label>
+            <textarea id="message-input" rows="1" maxlength="4000" placeholder="Message Kashvee" enterkeyhint="send" autocapitalize="sentences"></textarea>
+            <button type="button" class="icon-btn icon-btn--inline" id="mic-btn" aria-label="Start voice input" aria-pressed="false">
+              <svg class="icon" aria-hidden="true"><use href="#i-mic"/></svg>
+            </button>
+          </div>
+          <button type="submit" class="send-btn" id="send-btn" aria-label="Send message" disabled>
+            <svg class="icon" aria-hidden="true"><use href="#i-send"/></svg>
+          </button>
+        </form>
+      </section>
+
+      <!-- ===================== MEMORY ===================== -->
+      <section class="view" id="view-memory" data-view="memory" aria-labelledby="memory-heading" hidden>
+        <div class="page-scroll">
+          <div class="page">
+            <header class="page-head">
+              <h1 class="page-title" id="memory-heading" tabindex="-1" data-heading>Memory</h1>
+              <p class="lede">Things Kashvee keeps in mind about you. They stay on this device, and you can delete any of them.</p>
+            </header>
+
+            <form class="add-memory" id="memory-form" novalidate>
+              <label class="field-label" for="memory-input">Add a memory</label>
+              <div class="add-row">
+                <input class="input" id="memory-input" type="text" maxlength="200" placeholder="For example: I prefer short answers" autocomplete="off">
+                <button type="submit" class="btn btn--primary">Save memory</button>
+              </div>
+              <p class="field-error" id="memory-error" role="alert" hidden></p>
+            </form>
+
+            <p class="count-line" id="memory-count"></p>
+            <ul class="memory-list" id="memory-list"></ul>
+
+            <div class="empty" id="memory-empty" hidden>
+              <svg class="icon icon--lg" aria-hidden="true"><use href="#i-memory"/></svg>
+              <h2>Nothing remembered yet</h2>
+              <p>Tell Kashvee something like “remember that I prefer short answers”, or add a memory above.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===================== PROFILE ===================== -->
+      <section class="view" id="view-profile" data-view="profile" aria-labelledby="profile-heading" hidden>
+        <div class="page-scroll">
+          <div class="page">
+            <header class="page-head">
+              <h1 class="page-title" id="profile-heading" tabindex="-1" data-heading>Profile</h1>
+              <p class="lede">The basics Kashvee uses when you talk. Saved on this device.</p>
+            </header>
+
+            <div class="persona">
+              <span class="avatar avatar--lg" data-initial="K">
+                <img src="assets/avatar.svg" alt="" width="72" height="72">
+              </span>
+              <div class="persona-text">
+                <p class="persona-name" id="persona-name">Kashvee</p>
+                <p class="persona-tag" id="persona-tag"></p>
+                <ul class="traits" id="persona-traits" aria-label="Kashvee's personality"></ul>
+              </div>
+            </div>
+
+            <dl class="stats" aria-label="Your activity">
+              <div><dt>Memories</dt><dd id="stat-memories">0</dd></div>
+              <div><dt>Conversations</dt><dd id="stat-conversations">0</dd></div>
+              <div><dt>Messages</dt><dd id="stat-messages">0</dd></div>
+            </dl>
+
+            <form class="group" id="profile-form" novalidate>
+              <h2 class="group-title">About you</h2>
+              <div class="rows rows--form">
+                <div class="row row--stack">
+                  <label class="field-label" for="profile-name">Your name</label>
+                  <input class="input" id="profile-name" type="text" maxlength="40" placeholder="What should Kashvee call you?" autocomplete="given-name">
+                </div>
+                <div class="row row--stack">
+                  <label class="field-label" for="profile-interests">Interests</label>
+                  <input class="input" id="profile-interests" type="text" maxlength="120" placeholder="Optional, for example: editing, cricket, music" autocomplete="off">
+                </div>
+                <div class="row row--stack">
+                  <label class="field-label" for="profile-tone">How Kashvee talks to you</label>
+                  <select class="input" id="profile-tone"></select>
+                </div>
+                <fieldset class="row row--stack fieldset">
+                  <legend class="field-label">Reply length</legend>
+                  <div class="segmented">
+                    <label><input type="radio" name="length" value="short"><span>Short</span></label>
+                    <label><input type="radio" name="length" value="balanced"><span>Balanced</span></label>
+                  </div>
+                </fieldset>
+              </div>
+              <button type="submit" class="btn btn--primary btn--block">Save changes</button>
+            </form>
+
+            <section class="group" aria-labelledby="convos-title">
+              <h2 class="group-title" id="convos-title">Recent conversations</h2>
+              <ul class="rows" id="convo-list"></ul>
+              <p class="empty-note" id="convo-empty" hidden>No saved conversations yet. Send a message to start one.</p>
+            </section>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===================== SETTINGS ===================== -->
+      <section class="view" id="view-settings" data-view="settings" aria-labelledby="settings-heading" hidden>
+        <div class="page-scroll">
+          <div class="page">
+            <header class="page-head">
+              <h1 class="page-title" id="settings-heading" tabindex="-1" data-heading>Settings</h1>
+              <p class="lede">Changes apply right away.</p>
+            </header>
+
+            <section class="group" aria-labelledby="g-appearance">
+              <h2 class="group-title" id="g-appearance">Appearance</h2>
+              <div class="rows">
+                <fieldset class="row row--stack fieldset">
+                  <legend class="row-title">Theme</legend>
+                  <div class="segmented">
+                    <label><input type="radio" name="theme" data-setting="theme" value="dark"><span>Dark</span></label>
+                    <label><input type="radio" name="theme" data-setting="theme" value="light"><span>Light</span></label>
+                    <label><input type="radio" name="theme" data-setting="theme" value="system"><span>System</span></label>
+                  </div>
+                </fieldset>
+              </div>
+            </section>
+
+            <section class="group" aria-labelledby="g-chat">
+              <h2 class="group-title" id="g-chat">Chat</h2>
+              <div class="rows">
+                <label class="row row--switch">
+                  <span class="row-main"><span class="row-title">Show online status</span><span class="row-sub">Display the status dot and label under Kashvee’s name.</span></span>
+                  <span class="switch"><input type="checkbox" role="switch" data-setting="showStatus"><span class="track"></span></span>
+                </label>
+                <label class="row row--switch">
+                  <span class="row-main"><span class="row-title">Show typing indicator</span><span class="row-sub">Animate dots while Kashvee writes a reply.</span></span>
+                  <span class="switch"><input type="checkbox" role="switch" data-setting="showTyping"><span class="track"></span></span>
+                </label>
+                <label class="row row--switch">
+                  <span class="row-main"><span class="row-title">Send with Enter</span><span class="row-sub">Use Shift+Enter for a new line.</span></span>
+                  <span class="switch"><input type="checkbox" role="switch" data-setting="enterToSend"><span class="track"></span></span>
+                </label>
+                <label class="row row--switch">
+                  <span class="row-main"><span class="row-title">Remember things automatically</span><span class="row-sub">Save preferences and facts you mention, like what you love or where you live.</span></span>
+                  <span class="switch"><input type="checkbox" role="switch" data-setting="autoMemory"><span class="track"></span></span>
+                </label>
+              </div>
+            </section>
+
+            <section class="group" aria-labelledby="g-notify">
+              <h2 class="group-title" id="g-notify">Notifications</h2>
+              <div class="rows">
+                <label class="row row--switch">
+                  <span class="row-main"><span class="row-title">Reply notifications</span><span class="row-sub" id="notify-hint">Get notified when Kashvee replies while this tab is in the background.</span></span>
+                  <span class="switch"><input type="checkbox" role="switch" data-setting="notifications"><span class="track"></span></span>
+                </label>
+              </div>
+            </section>
+
+            <section class="group" aria-labelledby="g-data">
+              <h2 class="group-title" id="g-data">Your data</h2>
+              <div class="rows">
+                <div class="row row--action">
+                  <span class="row-main"><span class="row-title">Clear this conversation</span><span class="row-sub">Deletes the messages in the current chat.</span></span>
+                  <button type="button" class="btn btn--danger" data-action="clear-conversation">Clear</button>
+                </div>
+                <div class="row row--action">
+                  <span class="row-main"><span class="row-title">Clear memories</span><span class="row-sub">Kashvee forgets everything in the Memory tab.</span></span>
+                  <button type="button" class="btn btn--danger" data-action="clear-memories">Clear</button>
+                </div>
+                <div class="row row--action">
+                  <span class="row-main"><span class="row-title">Reset app</span><span class="row-sub">Removes all conversations, memories, your profile and settings.</span></span>
+                  <button type="button" class="btn btn--danger" data-action="reset-app">Reset</button>
+                </div>
+              </div>
+            </section>
+
+            <p class="about">Kashvee V1 runs entirely in your browser. Replies are generated locally, and nothing leaves this device.</p>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <nav class="nav" aria-label="Main">
+      <button type="button" class="nav-btn" data-view="chat" aria-current="page">
+        <span class="nav-ico"><svg class="icon" aria-hidden="true"><use href="#i-chat"/></svg></span>
+        <span class="nav-label">Chat</span>
+      </button>
+      <button type="button" class="nav-btn" data-view="memory">
+        <span class="nav-ico"><svg class="icon" aria-hidden="true"><use href="#i-memory"/></svg></span>
+        <span class="nav-label">Memory</span>
+      </button>
+      <button type="button" class="nav-btn" data-view="profile">
+        <span class="nav-ico"><svg class="icon" aria-hidden="true"><use href="#i-profile"/></svg></span>
+        <span class="nav-label">Profile</span>
+      </button>
+      <button type="button" class="nav-btn" data-view="settings">
+        <span class="nav-ico"><svg class="icon" aria-hidden="true"><use href="#i-settings"/></svg></span>
+        <span class="nav-label">Settings</span>
+      </button>
+    </nav>
+  </div>
+
+  <!-- Confirmation dialog -->
+  <div class="modal" id="modal" hidden>
+    <div class="modal-backdrop"></div>
+    <div class="modal-card" role="alertdialog" aria-modal="true" aria-labelledby="modal-title" aria-describedby="modal-body">
+      <h2 id="modal-title"></h2>
+      <p id="modal-body"></p>
+      <div class="modal-actions">
+        <button type="button" class="btn" id="modal-cancel">Cancel</button>
+        <button type="button" class="btn btn--danger-solid" id="modal-confirm">Confirm</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toasts -->
+  <div class="toasts" id="toasts" role="status" aria-live="polite"></div>
+
+  <script src="chat-api.js"></script>
+  <script src="script.js"></script>
+</body>
+</html>
